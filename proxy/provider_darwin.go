@@ -112,14 +112,6 @@ func (p *providerDarwin) GetSOCKSProxy(targetUrl string) Proxy {
 	return p.GetProxy(protocolSOCKS, targetUrl)
 }
 
-func (p *providerDarwin) GetProxies(protocol string, targetUrl string) []Proxy {
-	proxy := p.GetProxy(protocol, targetUrl)
-	if proxy != nil {
-		return []Proxy{proxy}
-	}
-	return []Proxy{}
-}
-
 const (
 	scUtilBinary          = "scutil"
 	scUtilBinaryArgument  = "--proxy"
@@ -144,10 +136,8 @@ Returns:
 */
 func (p *providerDarwin) readDarwinNetworkSettingProxy(protocol string, targetUrl *url.URL) Proxy {
 	proxy, err := p.parseScutildata(protocol, targetUrl, scUtilBinary, scUtilBinaryArgument)
-	if err != nil {
-		if isNotFound(err) {
-			log.Printf("[proxy.Provider.readDarwinNetworkSettingProxy]: %s proxy is not enabled.\n", protocol)
-		} else if isTimedOut(err) {
+	if err != nil && !isNotFound(err){
+		if isTimedOut(err) {
 			log.Printf("[proxy.Provider.readDarwinNetworkSettingProxy]: Operation timed out. \n")
 		} else {
 			log.Printf("[proxy.Provider.readDarwinNetworkSettingProxy]: Failed to parse Scutil data, %s\n", err)
@@ -265,7 +255,7 @@ func (p *providerDarwin) parseScutildata(protocol string, targetUrl *url.URL, na
 	}
 	if proxyBypass != "" {
 		bypass := p.isProxyBypass(targetUrl, proxyBypass, ",")
-		log.Printf("[proxy.Provider.parseProxyInfo]: ProxyBypass=\"%s\", targetUrl=%s, bypass=%t", proxyBypass, targetUrl, bypass)
+		// log.Printf("[proxy.Provider.parseProxyInfo]: ProxyBypass=\"%s\", targetUrl=%s, bypass=%t", proxyBypass, targetUrl, bypass)
 		if bypass {
 			return nil, nil
 		}
